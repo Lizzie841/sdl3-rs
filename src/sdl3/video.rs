@@ -672,6 +672,7 @@ impl FlashOperation {
 /// Note: If a `Window` goes out of scope but it cloned its context,
 /// then the `SDL_Window` will not be destroyed until there are no more references to the `WindowContext`.
 /// This may happen when a `TextureCreator<Window>` outlives the `Canvas<Window>`
+#[derive(Clone)]
 pub struct Window {
     context: Arc<WindowContext>, // Arc may not be needed, added because wgpu expects Window to be send/sync, though even with Arc this technically still isn't send/sync
 }
@@ -1610,6 +1611,10 @@ impl Window {
     /// function in the Vulkan library.
     #[doc(alias = "SDL_Vulkan_CreateSurface")]
     pub fn vulkan_create_surface(&self, instance: VkInstance) -> Result<VkSurfaceKHR, Error> {
+        #[cfg(feature = "ash")]
+        let mut surface: VkSurfaceKHR = VkSurfaceKHR::default();
+
+        #[cfg(not(feature = "ash"))]
         let mut surface: VkSurfaceKHR = 0 as _;
         if unsafe {
             sys::vulkan::SDL_Vulkan_CreateSurface(self.context.raw, instance, null(), &mut surface)
